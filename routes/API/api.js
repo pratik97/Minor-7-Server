@@ -13,7 +13,6 @@ var async = require('async');
 var crypto = require('crypto');
 var nodemailer = require('nodemailer');
 var cnf = require('../../config').env;
-var cnf = require('../../config').env;
 var cfg = require("../../config");
 var URL = cfg.db.URL;
 //Create All the Schemas Here...
@@ -33,7 +32,8 @@ router.post("/login", function (req, res, next) {
     // All variables
     var emailAddress = req.body.emailAddress;
     var password = req.body.password;
-
+    console.log(emailAddress);
+    console.log(password);
     // attempt to authenticate user
     UserSchema.getAuthenticated(emailAddress, password, function (err, user, reason) {
         if (err) {
@@ -50,8 +50,8 @@ router.post("/login", function (req, res, next) {
             var payload = {
                 id: user._id
             };
-            var token = jwt.sign(payload, cfg.authJWT.jwtSecret);
-            res.json({response: user, success: "true", token: token});
+            //var token = jwt.sign(payload, cfg.authJWT.jwtSecret);
+            res.json({response: user, success: "true"});
             return;
         }
 
@@ -79,69 +79,6 @@ router.post("/login", function (req, res, next) {
 
 });
 // End of login api
-
-
-//POST signup API
-//POST variable = username,password,gender,mobileNo,emailAddress,profileImageUrl,semester
-// response variable = response,success
-router.post("/signup", function (req, res, next) {
-    var userName = req.body.userName;
-    var password = req.body.password;
-    var gender = req.body.gender;
-    var mobileNumber = req.body.mobileNumber;
-    var emailAddress = req.body.emailAddress;
-    var profileImageUrl = req.body.profileImageUrl || "www.facebook.com";
-    var semester = req.body.semester;
-
-    console.log(userName);
-    console.log(password);
-    console.log(gender);
-    console.log(mobileNumber);
-    console.log(emailAddress);
-    console.log(profileImageUrl);
-    console.log(semester);
-
-// Create a new schema for current user
-    var AddUser = new UserSchema({
-        userName: userName,
-        password: password,
-        gender: gender,
-        emailAddress: emailAddress,
-        mobileNumber: mobileNumber,
-        profileImageUrl: profileImageUrl,
-        semester: semester
-    });
-
-// Check the schema
-    var error = AddUser.validateSync();
-    if (error) {
-        console.log(error);
-        res.json({response: error, success: "false", message: "Please enter valid data!"});
-        return;
-    }
-// Save through UserSchema
-    AddUser.save(function (err) {
-        if (err) {
-            console.log(err.errmsg);
-            var message = "";
-            // Custom error message
-            if (err.errmsg.includes('userName')) {
-                message = "UserName already taken!";
-            } else if (err.errmsg.includes('emailAddress')) {
-                message = "This email-address has already been registered!";
-            } else if (err.errmsg.includes('mobileNumber')) {
-                message = "This mobile number has already been registered!";
-            } else {
-                message = "Please enter valid data!";
-            }
-            res.json({response: message, success: "false", message: message});
-            return;
-        }
-        res.json({response: "User Added Successfully!", success: "true"});
-    });
-});
-// End of signup api
-
 
 //Change password API
 // ------changePassword - POST - REQUEST - emailAddress, mobileNumber, oldpass, newpass
@@ -209,5 +146,124 @@ router.put('/changePassword', function (req, res, next) {
 
 
 });
+//POST signup API
+//POST variable = username,password,gender,mobileNo,emailAddress,profileImageUrl,semester
+// response variable = response,success
+router.post("/signup", function (req, res, next) {
+    var userName = req.body.userName;
+    var password = req.body.password;
+    var gender = req.body.gender;
+    var mobileNumber = req.body.mobileNumber;
+    var emailAddress = req.body.emailAddress;
+    var profileImageUrl = req.body.profileImageUrl || "www.facebook.com";
+    var semester = req.body.semester;
 
+
+// Create a new schema for current user
+    var AddUser = new UserSchema({
+        userName: userName,
+        password: password,
+        gender: gender,
+        emailAddress: emailAddress,
+        mobileNumber: mobileNumber,
+        profileImageUrl: profileImageUrl,
+        semester: semester
+    });
+
+// Check the schema
+    var error = AddUser.validateSync();
+    if (error) {
+        console.log(error);
+        res.json({response: error, success: "false", message: "Please enter valid data!"});
+        return;
+    }
+// Save through UserSchema
+    AddUser.save(function (err) {
+        if (err) {
+            console.log(err.errmsg);
+            var message = "";
+            // Custom error message
+            if (err.errmsg.includes('userName')) {
+                message = "UserName already taken!";
+            } else if (err.errmsg.includes('emailAddress')) {
+                message = "This email-address has already been registered!";
+            } else if (err.errmsg.includes('mobileNumber')) {
+                message = "This mobile number has already been registered!";
+            } else {
+                message = "Please enter valid data!";
+            }
+            res.json({response: message, success: "false", message: message});
+            return;
+        }
+        res.json({response: "User Added Successfully!", success: "true"});
+    });
+});
+// End of signup api
+
+//Sell Item
+//Post Variables ItemName,ItemImageUrl,ItemBranch, ItemSellStatus, ItemCategory
+router.post('/sellItem', function (req, res, next) {
+    var userId = req.body.userId;
+    var itemName = req.body.itemName;
+    var itemImageUrl = req.body.itemImageUrl;
+    var itemBranch = req.body.itemBranch;
+    var itemSellStatus = req.body.itemSellStatus;
+    var itemCategory = req.body.itemCategory;
+    var itemPrice = req.body.itemPrice;
+    var itemMessage = req.body.itemMessage;
+
+    //Create a new Schema for Item
+    var AddItem = new ItemSchema({
+        userId: userId,
+        itemName: itemName,
+        itemImageUrl: itemImageUrl,
+        itemBranch: itemBranch,
+        itemSellStatus: itemSellStatus,
+        itemCategory: itemCategory,
+        itemPrice: itemPrice,
+        itemMessage: itemMessage
+    });
+// Check the schema
+    var error = AddItem.validateSync();
+    if (error) {
+        console.log(error);
+        res.json({response: error, success: "false", message: "Please enter valid data!"});
+        return;
+    }
+//Save to UserSchema
+    AddItem.save(function (err) {
+        if (err) {
+            console.log(err.errmsg);
+            var message = "Please Enter Valid Data";
+
+            res.json({response: message, success: "false", message: message});
+            return;
+        }
+        res.json({response: "Item Added Successfully!", success: "true"});
+    });
+
+
+});
+
+router.get("/getAllItems", function (req, res, next) {
+    ItemSchema.find({}, function (err, items) {
+        var itemMap = {};
+        items.forEach(function (item) {
+            itemMap[item._id] = item;
+        })
+        res.send(itemMap);
+    });
+});
+
+router.get("/getItemsForSale",function(req,res,next){
+    ItemSchema.find({},function (err,items) {
+        var itemMap={};
+        items.forEach(function (item) {
+            if(item.itemSellStatus==="false"){
+                itemMap[item._id] = item;
+            }
+        })
+        res.send(itemMap);
+    });
+});
 module.exports = router;
