@@ -3,12 +3,15 @@ var path = require('path');
 var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
+var app = express();
 var bodyParser = require('body-parser');
-var http = require('http');
+//var http = require('http');
+// var http = require('http').Server(app);
+// var io = require('socket.io')(http);
+
 var index = require('./routes/index');
 var users = require('./routes/users');
 var api = require('./routes/API/api');
-var app = express();
 var cors = require('cors');
 var mongoose = require('mongoose');
 // view engine setup

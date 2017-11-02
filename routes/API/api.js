@@ -9,10 +9,10 @@ var ObjectId = require('mongodb').ObjectID;
 var request = require('request');
 var async = require('async');
 var multer = require('multer');
-// set the directory for the uploads to the uploaded to
-var DIR = 'C:/Users/Pratik/Documents/WebstormPics';
-//define the type of upload multer would be doing and pass in its destination, in our case, its a single file with the name photo
-var upload = multer({dest: DIR}).single('photo');
+var multerS3 = require('multer-s3');
+var fs = require('fs');
+var AWS = require('aws-sdk');
+
 
 var crypto = require('crypto');
 var cnf = require('../../config').env;
@@ -21,12 +21,12 @@ var URL = cfg.db.URL;
 //Create All the Schemas Here...
 var UserSchema = require("../models/UserSchema").User;
 var ItemSchema = require("../models/ItemSchema").Item;
-
-
+var ChatSchema = require("../models/ChatSchema").Chat;
 //Entry Point Function to Check if Server is working
 router.get('/', function (req, res, next) {
     res.send("Welcome to the Student Help Portal API here");
 });
+
 
 // POST login api
 // Post variables = userName,password
@@ -203,6 +203,75 @@ router.post("/signup", function (req, res, next) {
 });
 // End of signup api
 
+
+// Store Chat Data API
+// input: person1Id,person2Id, senderId, message
+router.post('/storeChatData', function (req, res, next) {
+    var person1Id = req.body.person1Id;
+    var person2Id = req.body.person2Id;
+    // var timeStamp =  window.performance && window.performance.now && window.performance.timing && window.performance.timing.navigationStart ? window.performance.now() + window.performance.timing.navigationStart : Date.now();
+    // console.log(timeStamp, Date.now());
+    var timeStamp = Date.now();
+    console.log(timeStamp);
+    var senderId = req.body.senderId;
+    var message = req.body.message;
+    var flag = true;
+    var messageLen;
+        ChatSchema.findOne({person1Id: person1Id || person2Id, person2Id: person2Id || person1Id}, function (err, result) {
+        console.log(result);
+        if (err || result==null) {
+            flag = false;
+            var AddChat = new ChatSchema({
+                person1Id: person1Id,
+                person2Id: person2Id,
+                messages: [{
+                    timeStamp: timeStamp,
+                    senderId: senderId,
+                    message: message
+                }]
+            });
+            var error = AddChat.validateSync();
+            if (error) {
+                console.log(error);
+                res.json({response: error, success: "false", message: "These is not a valid Chat!"});
+                return;
+            }
+            AddChat.save(function (err) {
+                if (err) {
+                    // console.log(err.errmsg);
+                    var message = "this is not a valid Chat!";
+
+                    res.json({response: message, success: "false", message: message});
+                    return;
+                }
+                res.json({response: "Chat Added Successfully!", success: "true"});
+            });
+        }
+        else {
+            flag =true;
+            messageLen = result.messages.length;
+            console.log(messageLen);
+            console.log("message = "+message);
+            result.messages.push( {
+                timeStamp: timeStamp,
+                senderId: senderId,
+                message: message
+            });
+            AddChat = ChatSchema(result);
+            AddChat.save(function (err) {
+                if (err) {
+                    var message = "this is not a valid Chat!";
+
+                    res.json({response: message, success: "false", message: message});
+                    return;
+                }
+                res.json({response: "Chat Added Successfully!", success: "true"});
+            });
+        }
+    });
+
+
+})
 //Sell Item
 //Post Variables ItemName,ItemImageUrl,ItemBranch, ItemSellStatus, ItemCategory
 router.post('/sellItem', function (req, res, next) {
@@ -247,7 +316,23 @@ router.post('/sellItem', function (req, res, next) {
 
 
 });
-
+//getUserName API POST
+router.post("/getUserName", function (req, res, next) {
+    var userId = req.body.userId;
+    // var myId = req.body.myId;
+    var userName = "";
+    UserSchema.findOne({_id: userId}, function (err, result) {
+        console.log(result);
+        if (err || result === null) {
+            res.json({success: 'false', response: err});
+            return;
+        }
+        else {
+            userName = result.userName;
+            return res.send({success: 'true', response: userName});
+        }
+    });
+});
 router.get("/getAllItems", function (req, res, next) {
     ItemSchema.find({}, function (err, items) {
         var itemMap = {};
@@ -258,32 +343,38 @@ router.get("/getAllItems", function (req, res, next) {
     });
 });
 
-router.get("/getItemsForSale",function(req,res,next){
-    ItemSchema.find({},function (err,items) {
-        var itemMap=[];
-        var i=0;
+router.get("/getItemsForSale", function (req, res, next) {
+    ItemSchema.find({}, function (err, items) {
+        var itemMap = [];
+        var i = 0;
         items.forEach(function (item) {
-            if(item.itemSellStatus==="false"){
+            if (item.itemSellStatus === "false") {
 
                 itemMap[parseInt(i)] = item;
                 i++;
             }
         })
-        res.send({response:itemMap, success:true});
+        res.send({response: itemMap, success: true});
     });
 });
 
-router.post('/upload', function (req, res, next) {
-    var path = '';
-    upload(req, res, function (err) {
-        if (err) {
-            // An error occurred when uploading
-            console.log(err);
-            return res.status(422).send("an Error occured")
-        }
-        // No error occured.
-        path = req.file.path;
-        return res.send("Upload Completed for "+path);
-    });
-})
+/* --deprecated :)
+ router.post('/upload', function (req, res, next) {
+ var path = '';
+ upload(req, res, function (err) {
+ if (err) {
+ // An error occurred when uploading
+ console.log(err);
+ return res.status(422).send("an Error occured")
+ }
+ // No error occured.
+ console.log(req.file);
+ path = req.file.path;
+ var itemImageUrl = req.file.path;
+ return res.send(path);
+ });
+ })
+ */
+
+
 module.exports = router;

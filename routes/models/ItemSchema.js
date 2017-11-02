@@ -28,16 +28,16 @@ var ItemSchema = new Schema({
         required: [true, 'Item Sale Status is not given']
     },
     itemCategory: {
-        type:String,
-        required:[true, 'Item Category is not given']
+        type: String,
+        required: [true, 'Item Category is not given']
     },
     itemPrice: {
-      type:String,
-        required:[true,'Item Price is not given']
+        type: String,
+        required: [true, 'Item Price is not given']
     },
-    itemMessage:{
-        type:String,
-        required:[false]
+    itemMessage: {
+        type: String,
+        required: [false]
     }
 
 
