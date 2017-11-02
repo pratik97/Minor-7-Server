@@ -217,11 +217,12 @@ router.post('/storeChatData', function (req, res, next) {
     var message = req.body.message;
     var flag = true;
     var messageLen;
-        ChatSchema.findOne({person1Id: person1Id || person2Id, person2Id: person2Id || person1Id}, function (err, result) {
-        console.log(result);
-        if (err || result==null) {
-            flag = false;
+        ChatSchema.findOne({person1Id: person1Id , person2Id: person2Id}, function (err, result) {
+            flag= false;
+//case of error
+            if (err || result==null) {
             var AddChat = new ChatSchema({
+
                 person1Id: person1Id,
                 person2Id: person2Id,
                 messages: [{
@@ -269,9 +270,62 @@ router.post('/storeChatData', function (req, res, next) {
             });
         }
     });
+        if(flag==true){
+            ChatSchema.findOne({person1Id: person2Id , person2Id: person1Id}, function (err, result) {
+                flag= false;
+                if (err || result==null) {
+                    var AddChat = new ChatSchema({
 
+                        person1Id: person2Id,
+                        person2Id: person1Id,
+                        messages: [{
+                            timeStamp: timeStamp,
+                            senderId: senderId,
+                            message: message
+                        }]
+                    });
+                    var error = AddChat.validateSync();
+                    if (error) {
+                        console.log(error);
+                        res.json({response: error, success: "false", message: "These is not a valid Chat!"});
+                        return;
+                    }
+                    AddChat.save(function (err) {
+                        if (err) {
+                            // console.log(err.errmsg);
+                            var message = "this is not a valid Chat!";
 
+                            res.json({response: message, success: "false", message: message});
+                            return;
+                        }
+                        res.json({response: "Chat Added Successfully!", success: "true"});
+                    });
+                }
+                else {
+                    flag =true;
+                    messageLen = result.messages.length;
+                    console.log(messageLen);
+                    console.log("message = "+message);
+                    result.messages.push( {
+                        timeStamp: timeStamp,
+                        senderId: senderId,
+                        message: message
+                    });
+                    AddChat = ChatSchema(result);
+                    AddChat.save(function (err) {
+                        if (err) {
+                            var message = "this is not a valid Chat!";
+
+                            res.json({response: message, success: "false", message: message});
+                            return;
+                        }
+                        res.json({response: "Chat Added Successfully!", success: "true"});
+                    });
+                }
+            });
+        }
 })
+
 //Sell Item
 //Post Variables ItemName,ItemImageUrl,ItemBranch, ItemSellStatus, ItemCategory
 router.post('/sellItem', function (req, res, next) {
@@ -316,6 +370,68 @@ router.post('/sellItem', function (req, res, next) {
 
 
 });
+//Retrieve Chat Data
+router.post("/getChat",function (req,res,next) {
+    var person1Id = req.body.person1Id;
+    var person2Id = req.body.person2Id;
+    console.log(person1Id+" "+person2Id);
+    var flag=true;
+    ChatSchema.findOne({person1Id: person1Id  , person2Id: person2Id},function (err,result) {
+
+        if(err || result===null){
+            res.json({success: 'false', response: err});
+            return;
+        }
+        else{
+            flag = false;
+            var MyMessages=[];
+            var UsersMessages=[];
+            var k = result.messages;
+            for( var i=0;i<k.length;i++){
+                if(k[i].senderId == person1Id){
+                    MyMessages.push(k[i].message);
+                }
+                else{
+                    UsersMessages.push(k[i].message);
+                }
+            }
+            console.log(MyMessages+" "+UsersMessages);
+            var response = [MyMessages,UsersMessages];
+            return res.send({success: 'true', response: response });
+        }
+
+    })
+    if(flag==true){
+        ChatSchema.findOne({person1Id: person2Id  , person2Id: person1Id},function (err,result) {
+
+            if(err || result===null){
+                res.json({success: 'false', response: err});
+                return;
+            }
+            else{
+                flag = false;
+                var MyMessages=[];
+                var UsersMessages=[];
+                var k = result.messages;
+                for( var i=0;i<k.length;i++){
+                    if(k[i].senderId == person2Id){
+                        MyMessages.push(k[i].message);
+                    }
+                    else{
+                        UsersMessages.push(k[i].message);
+                    }
+                }
+                console.log(MyMessages+" "+UsersMessages);
+                var response = [MyMessages,UsersMessages];
+                return res.send({success: 'true', response: response });
+            }
+
+        })
+
+    }
+
+
+})
 //getUserName API POST
 router.post("/getUserName", function (req, res, next) {
     var userId = req.body.userId;
