@@ -38,9 +38,7 @@ var ItemSchema = new Schema({
     itemMessage: {
         type: String,
         required: [false]
-    }
-
-
+    },
 })
 var Item = mongoose.model('Item', ItemSchema);
 module.exports = {

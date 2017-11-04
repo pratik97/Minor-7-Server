@@ -8,8 +8,8 @@ module.exports = function (app) {
     app.io.on('connection', function (socket) {
         console.log("socket="+socket);
         console.log("user Connected.");
-        socket.on('add-message', function(msg){
-            app.io.emit('message', {type: 'new-message',text:msg});
+        socket.on('add-message', function(msg,senderId){
+            app.io.emit('message', {type: 'new-message',text:msg,response:senderId});
         });
         socket.on('disconnect', function(){
             console.log('user disconnected');

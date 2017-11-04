@@ -230,9 +230,9 @@ router.post('/storeChatData', function (req, res, next) {
             {person1Id: person2Id, person2Id: person1Id}
         ]
     }, function (err, result) {
-        ChatSchema.findOne({person1Id:person2Id,person2Id: person1Id},function (err1,res) {
-            if(err1 || res===null){
-                flag=false;
+        ChatSchema.findOne({person1Id: person2Id, person2Id: person1Id}, function (err1, res) {
+            if (err1 || res === null) {
+                flag = false;
             }
         });
         console.log(flag);
@@ -304,7 +304,7 @@ router.post('/sellItem', function (req, res, next) {
     var itemCategory = req.body.itemCategory;
     var itemPrice = req.body.itemPrice;
     var itemMessage = req.body.itemMessage;
-
+    var itemId;
     //Create a new Schema for Item
     var AddItem = new ItemSchema({
         userId: userId,
@@ -332,11 +332,28 @@ router.post('/sellItem', function (req, res, next) {
             res.json({response: message, success: "false", message: message});
             return;
         }
-        res.json({response: "Item Added Successfully!", success: "true"});
+        res.json({response: "Item Added Successfully!", success: "true", itemId: AddItem._id});
     });
 
 
 });
+router.put("/UpdateSellItemImageUrl", function (req, res, next) {
+    var _id = req.body._id;
+    var itemImageUrl = req.body.itemImageUrl;
+
+    console.log(_id);
+    ItemSchema.findOneAndUpdate({_id: _id}, {itemImageUrl: itemImageUrl}, function (err, result) {
+        console.log(result);
+        if (err || result == null) {
+            res.json({success: 'false', response: err});
+            return;
+        }
+        else {
+            res.json({success:'true', response:"Item Image Updated !!"})
+        }
+    });
+
+})
 //Retrieve Chat Data
 router.post("/getChat", function (req, res, next) {
     var person1Id = req.body.person1Id;
